@@ -1,0 +1,71 @@
+-- 14.01.2018 10:36:09 AR V1.0a
+
+generic = {
+  name = 'Shift Arithmetic',
+  parameter = {
+    shift = 0
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setOutputsPinCount(1)
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.modifyFlags('SupressStartFunctionCall', true)
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    local s = ''
+    for i = -63, 63 do
+      s = s .. i .. '\n'
+    end
+    gui.add('Info', 'Info', self.name, [[
+ The Shift Arithmetic block can shift the bits left and right (sign extended)
+ Positiv valuse shift left, negativ right
+ ]] )
+    gui.add('ComboBox', 'ComboBoxShift', 'Shift', s, {Width = 60})
+    gui.set('ComboBoxShift', 'ItemIndex', self.parameter.shift + 63)
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.shift = gui.get('ComboBoxShift', 'ItemIndex') - 63
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    if self.parameter.shift > 0 then
+      return block.getDefaultAvatar(0x50, "'a << " .. self.parameter.shift .. "'")
+    end
+    if self.parameter.shift < 0 then
+      return block.getDefaultAvatar(0x50, "'a >> " .. -self.parameter.shift .. "'")
+    end
+    return block.getDefaultAvatar(0x50, "'a'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.step = function(a)
+          return a STEP
+        end
+
+        return block
+      ]==]
+    local replaces = {}
+    if self.parameter.shift > 0 then
+      replaces['STEP'] = '<< ' .. self.parameter.shift
+    elseif self.parameter.shift < 0 then
+      replaces['STEP'] = '>> ' .. -self.parameter.shift
+    else
+      replaces['STEP'] = ''
+    end
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

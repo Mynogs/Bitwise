@@ -1,0 +1,56 @@
+-- 14.01.2018 10:36:09 AR V1.0a
+
+generic = {
+  name = 'Bit Set',
+  parameter = {
+    bit = 0
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setOutputsPinCount(1)
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.modifyFlags('SupressStartFunctionCall', true)
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    local s = ''
+    for i = 0, 63 do
+      s = s .. i .. '\n'
+    end
+    gui.add('Info', 'Info', self.name, 'Set specified bit of integer to one')
+    gui.add('ComboBox', 'ComboBoxOperator', 'Operator', s, {Width = 60})
+    gui.set('ComboBoxOperator', 'ItemIndex', self.parameter.bit)
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.bit = gui.get('ComboBoxOperator', 'ItemIndex')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x50, "'Clear\\nbit " .. self.parameter.bit .. "'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.step = function(a)
+          return STEP
+        end
+
+        return block
+      ]==]
+    local replaces = {}
+    replaces['STEP'] = 'a | 0x' .. string.format('%X', 1 << self.parameter.bit)
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

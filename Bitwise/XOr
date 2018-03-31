@@ -1,0 +1,53 @@
+-- 26.12.2017 11:07:48 AR V1.0a
+
+generic = {
+  parameter = {
+    inputs = 2
+  },
+
+  init = function(self)
+    block.setInputsPinCount(self.parameter.inputs)
+    block.setOutputsPinCount(1)
+    block.modifyFlags('SupressStartFunctionCall', true)
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'OR', 'Bitwise OR')
+    gui.add('Edit', 'EditNumberOfInputs', 'Number of inputs')
+    gui.set('EditNumberOfInputs', 'Integer', self.parameter.inputs)
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.inputs = math.max(gui.get('EditNumberOfInputs', 'Integer'), 1)
+    block.setInputsPinCount(self.parameter.inputs)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'~'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        return {
+
+          step = function(A)
+            return Q
+          end
+
+        }
+      ]==]
+    local replaces = {
+      ['A'] = table.concat(block.getInputsPinNames(), ', '),
+      ['Q'] = table.concat(block.getInputsPinNames(), ' ~ '),
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

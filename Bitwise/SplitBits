@@ -1,0 +1,76 @@
+-- 21.01.2018 16:11:56 AR V1.0a
+
+generic = {
+  name = 'Split Bits',
+  parameter = {
+    bitStart = 0,
+    bitCount = 1
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setOutputsPinCount(self.parameter.bitCount)
+    for i = 1, self.parameter.bitCount do
+      block.setOutputPinTypeRestrains(i, 'boolean')
+    end
+    block.modifyFlags('SupressStartFunctionCall', true)
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    local s1 = ''
+    for i = 0, 63 do
+      s1 = s1 .. i .. '\n'
+    end
+    local s2 = ''
+    for i = 1, 64 do
+      s2 = s2 .. i .. '\n'
+    end
+    gui.add('Info', 'Info', self.name, 'Output selection of contiguous bits from input signal')
+    gui.add('ComboBox', 'ComboBoxBitStart', 'Start at bit', s1, {Width = 60})
+    gui.add('ComboBox', 'ComboBoxBitCount', 'Bit count', s2, {Width = 60})
+    gui.set('ComboBoxBitStart', 'ItemIndex', self.parameter.bitStart)
+    gui.set('ComboBoxBitCount', 'ItemIndex', self.parameter.bitCount - 1)
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.bitStart = gui.get('ComboBoxBitStart', 'ItemIndex')
+    self.parameter.bitCount = gui.get('ComboBoxBitCount', 'ItemIndex') + 1
+    block.setOutputsPinCount(self.parameter.bitCount)
+    for i = 1, self.parameter.bitCount do
+      block.setOutputPinTypeRestrains(i, 'boolean')
+    end
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x50, "'a[" .. self.parameter.bitStart .. ':' .. (self.parameter.bitStart + self.parameter.bitCount - 1) .. "]'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.step = function(a)
+          SHIFT
+          local q = {}
+          for i = 1, NN do
+            q[i] = a & (1 << (i - 1)) ~= 0
+          end
+          return table.unpack(q)
+        end
+
+        return block
+      ]==]
+    local replaces = {}
+    replaces['SHIFT'] = self.parameter.bitStart > 0 and 'a = a >> ' .. self.parameter.bitStart or ''
+    replaces['NN'] = self.parameter.bitCount
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

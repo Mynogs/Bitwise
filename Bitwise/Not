@@ -1,0 +1,46 @@
+-- V1.0a AR
+-- 30.12.2016 09:51:27 AR V1.0b
+-- 21.05.2017 10:46:33 AR V1.0c
+
+generic = {
+  parameter = {
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setOutputsPinCount(1)
+    block.modifyFlags('SupressStartFunctionCall', true)
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'NOT', 'Logical NOT')
+    gui.setSize()
+  end,
+
+  apply = function(self)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'~'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        return {
+
+          step = function(a)
+            return ~a
+          end
+
+        }
+      ]==]
+    return source
+  end,
+
+}
+

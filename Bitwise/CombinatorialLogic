@@ -1,0 +1,108 @@
+-- 15.12.2017 11:37:56 AR V1.0
+
+generic = {
+  parameter = {
+    inputBits = 2,
+    outputBits = 4,
+    table = {1, 2, 4, 8}
+  },
+
+  makeGUI = function(self)
+    gui.remove('_*')
+    for i = 1, 1 << self.parameter.inputBits do
+      gui.add('CheckBox', '_' .. (i * 100 + 1), i - 1, {Left = 10, top = i * 16 + 130, Width = 40, Alignment = 'taLeftJustify'})
+      for j = 2, self.parameter.outputBits do
+        gui.add('CheckBox', '_' .. (i * 100 + j), '', {Left = j * 20 + 10, top = i * 16 + 130, Width = 20, Alignment = 'taLeftJustify'})
+      end
+    end
+  end,
+
+  setGUI = function(self)
+    for i = 1, 1 << self.parameter.inputBits do
+      for j = 1, self.parameter.outputBits do
+        gui.set('_' .. (i * 100 + j), 'Checked', (self.parameter.table[i] or 0) & (1 << (j - 1)) ~= 0)
+      end
+    end
+  end,
+
+  getGUI = function(self)
+    for i = 1, 1 << self.parameter.inputBits do
+      local v = 0
+      for j = 1, self.parameter.outputBits do
+        if gui.get('_' .. (i * 100 + j), 'Checked') then
+          v = v | (1 << (j - 1))
+        end
+        self.parameter.table[i] = v
+      end
+    end
+  end,
+
+  init = function(self)
+    block.setOutputsPinCount(1)
+    block.setInputsPinCount(1)
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    local s = ''
+    for i = 2, 64 do
+      s = s .. i .. '\n'
+    end
+    gui.updateBegin()
+    gui.add('Info', 'Info', 'Combinatorial Logic', '')
+    gui.add('ComboBox', 'ComboBoxInputBits', 'Number of input bits', "2\n3\n4\n5\n6", {Width = 60})
+    gui.add('ComboBox', 'ComboBoxOutputBits', 'Number of output bits', s, {Width = 60})
+    gui.add('Label', 'Label', 'Press apply to update bit table!')
+    gui.set('ComboBoxInputBits', 'ItemIndex', self.parameter.inputBits - 2)
+    gui.set('ComboBoxOutputBits', 'ItemIndex', self.parameter.outputBits - 2)
+    self.makeGUI(self)
+    self.setGUI(self)
+    gui.updateEnd()
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    gui.updateBegin()
+    self.getGUI(self)
+    local inputBits = gui.get('ComboBoxInputBits', 'Text')
+    local outputBits = gui.get('ComboBoxOutputBits', 'Text')
+    if inputBits ~= self.parameter.inputBits or outputBits ~= self.parameter.outputBits then
+      self.parameter.inputBits = inputBits
+      self.parameter.outputBits = outputBits
+      self.makeGUI(self)
+    end
+    self.setGUI(self)
+    gui.updateEnd()
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'[\\xE2\\x88\\xB7]'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.table = {TABLE}
+        end
+
+        block.step = function(a)
+          return block.table[a & MASK]
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['TABLE'] = table.concat(self.parameter.table, ', '),
+      ['MASK'] = (1 << self.parameter.inputBits) - 1
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+
